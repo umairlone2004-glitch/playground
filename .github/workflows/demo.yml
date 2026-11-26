@@ -2,6 +2,10 @@ name: Demo workflow
 
 # A small, readable example workflow: a matrix build, an artifact, and a
 # manual trigger. Nothing here touches production.
+#
+# Note: `inputs` only exists for workflow_dispatch / reusable workflows, so
+# this file reads github.event.inputs instead. That keeps the expression
+# valid for push and pull_request events too.
 
 on:
   push:
@@ -22,6 +26,9 @@ concurrency:
   group: demo-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GREETING: ${{ github.event.inputs.greeting }}
+
 jobs:
   build:
     name: Build (${{ matrix.os }})
@@ -35,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Say hello
-        run: echo "${{ inputs.greeting || 'Hello from the demo workflow' }}"
+        run: echo "${GREETING:-Hello from the demo workflow}"
 
       - name: Show the environment
         run: |
