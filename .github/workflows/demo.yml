@@ -72,4 +72,5 @@ jobs:
     if: always()
     steps:
       - name: Report the result
-        run: echo "Matrix result: ${{ needs.build.result }}"
+        run: |
+          echo "Matrix result: ${{ needs.build.result }}"
