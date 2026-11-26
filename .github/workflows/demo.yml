@@ -1,0 +1,68 @@
+name: Demo workflow
+
+# A small, readable example workflow: a matrix build, an artifact, and a
+# manual trigger. Nothing here touches production.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      greeting:
+        description: "Text the demo prints"
+        required: false
+        default: "Hello from the demo workflow"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Say hello
+        run: echo "${{ inputs.greeting || 'Hello from the demo workflow' }}"
+
+      - name: Show the environment
+        run: |
+          echo "Event:   ${{ github.event_name }}"
+          echo "Ref:     ${{ github.ref }}"
+          echo "SHA:     ${{ github.sha }}"
+          echo "Runner:  ${{ runner.os }}"
+
+      - name: Write a demo report
+        run: |
+          mkdir -p dist
+          printf 'build ok\nos=%s\nsha=%s\n' \
+            "${{ runner.os }}" "${{ github.sha }}" > dist/report.txt
+          cat dist/report.txt
+
+      - name: Upload the demo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-report-${{ runner.os }}
+          path: dist/report.txt
+          if-no-files-found: error
+
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    steps:
+      - name: Report the result
+        run: echo "Matrix result: ${{ needs.build.result }}"
